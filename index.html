@@ -3,40 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Code Cleaner v2.0</title>
+    <title>Cloud Code 格式清洗工具</title>
     <style>
-        /* 样式保持不变，为了节省篇幅我只列出核心改动，你可以直接全选覆盖 */
-        :root { --bg-color: #1e1e1e; --text-color: #d4d4d4; --input-bg: #252526; --border-color: #3e3e42; --accent-color: #007acc; }
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-        h1 { font-size: 1.2rem; color: #fff; text-align: center; margin-bottom: 15px; }
-        .container { display: flex; flex-direction: column; gap: 15px; flex: 1; }
-        textarea { width: 100%; flex: 1; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; }
-        textarea:focus { border-color: var(--accent-color); }
-        .controls { display: flex; gap: 10px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: background 0.2s; }
-        #btn-copy { background-color: var(--accent-color); }
-        #btn-copy:hover { background-color: #005f9e; }
-        #btn-clear { background-color: #444; flex: 0 0 80px; }
-        #btn-clear:hover { background-color: #555; }
-        .status { text-align: center; font-size: 0.9rem; height: 20px; color: #4ec9b0; margin-top: 5px;}
-        @media (min-width: 768px) { .container { flex-direction: row; } }
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --input-bg: #252526;
+            --border-color: #3e3e42;
+            --accent-color: #007acc;
+            --accent-hover: #005f9e;
+            --success-color: #4ec9b0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #fff;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+            min-height: 0; /* 防止flex子元素溢出 */
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* 移动端适配：竖向排列 */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: white;
+            font-size: 14px;
+        }
+
+        #btn-copy {
+            background-color: var(--accent-color);
+        }
+        #btn-copy:hover {
+            background-color: var(--accent-hover);
+        }
+
+        #btn-clear {
+            background-color: #3e3e42;
+            flex: 0 0 100px;
+        }
+        #btn-clear:hover {
+            background-color: #555;
+        }
+
+        .status-bar {
+            text-align: center;
+            height: 20px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: var(--success-color);
+        }
     </style>
 </head>
 <body>
 
-    <h1>📋 Cloud Code 格式清洗工具 (修复版)</h1>
+    <h1>📋 Cloud Code 格式清洗工具</h1>
     
     <div class="container">
-        <textarea id="input" placeholder="粘贴 CLI 输出文本..."></textarea>
-        <textarea id="output" placeholder="结果..." readonly></textarea>
+        <textarea id="input" placeholder="请在此粘贴 CLI 输出的乱码文本...
+例如：
+  Multi-modal severity
+  assessment integrates..."></textarea>
+        
+        <textarea id="output" placeholder="清洗后的结果将显示在这里..." readonly></textarea>
     </div>
-
-    <div class="status" id="status-msg"></div>
 
     <div class="controls">
-        <button id="btn-clear">清空</button>
-        <button id="btn-copy">复制结果</button>
+        <button id="btn-clear">清空内容</button>
+        <button id="btn-copy">复制结果 (Copy Result)</button>
     </div>
+
+    <div class="status-bar" id="status-msg"></div>
 
     <script>
         const input = document.getElementById('input');
@@ -45,53 +139,52 @@
         const btnClear = document.getElementById('btn-clear');
         const statusMsg = document.getElementById('status-msg');
 
+        // 核心清洗逻辑
         function cleanText(text) {
             if (!text) return '';
 
-            // ----------------------------------------------------
-            // 核心修正区：Strict Regex Logic
-            // ----------------------------------------------------
-            
-            // 旧版错误逻辑：\s+ 吃掉了换行符
-            // text.replace(/(?<=\S)\n\s+(?=[^-\d*•])/g, ' ');
-
-            // ✅ 新版正确逻辑：
-            // 1. ([^\n])      -> 捕获上一行的最后一个字（确保不是空行）
-            // 2. \n           -> 匹配换行符
-            // 3. [ \t]+       -> 仅匹配水平空白（空格/Tab），严禁匹配 \n
-            // 4. (?=[^-\d*•]) -> 确保下一行不是列表符号
-            
+            // 1. 【断行合并】Merge Lines
+            // 逻辑：找到“上一行末尾(非换行)” + “换行符” + “缩进(空格或Tab)”
+            // 保护机制：如果缩进后面跟着 - * • 数字，则认为是列表或标题，不合并。
             let cleaned = text.replace(/([^\n])\n[ \t]+(?=[^-\d*•])/g, '$1 ');
 
-            // ----------------------------------------------------
+            // 2. 【强制顶格】Force Flush Left
+            // 逻辑：找到行首（开头或换行符后）的缩进。
+            // 保护机制：如果缩进后面跟着 - * • (列表符号)，则保留缩进。
+            // 关键点：\d (数字) 不在保护名单里，所以 "  2.4 Title" 会变成 "2.4 Title" (顶格)。
+            cleaned = cleaned.replace(/(^|\n)[ \t]+(?=[^-*•])/g, '$1');
 
-            // 去除首尾多余空白（解决第一行缩进问题）
-            cleaned = cleaned.trim();
-
-            // 压缩句中可能出现的多余空格
+            // 3. 【细节优化】Polishing
+            // 压缩句中可能因合并产生的多余空格 (2个以上变1个)
             cleaned = cleaned.replace(/ +/g, ' ');
-            
-            // 可选：如果列表项被压缩太紧，可以在这里把列表项前的换行找回来
-            // (通常上面的正则已经保护了列表，这步是双重保险)
-            // cleaned = cleaned.replace(/(\S)\s+(- )/g, '$1\n$2');
+
+            // 去除首尾空白
+            cleaned = cleaned.trim();
 
             return cleaned;
         }
 
+        // 实时监听输入
         input.addEventListener('input', () => {
-            output.value = cleanText(input.value);
+            const raw = input.value;
+            output.value = cleanText(raw);
         });
 
+        // 复制按钮
         btnCopy.addEventListener('click', async () => {
             if (!output.value) return;
             try {
                 await navigator.clipboard.writeText(output.value);
-                showStatus('✅ 已复制！');
+                showStatus('✅ 复制成功！');
             } catch (err) {
-                showStatus('❌ 复制失败');
+                // 兜底策略：如果 writeText 失败（如非 HTTPS 环境），尝试传统方法
+                output.select();
+                document.execCommand('copy');
+                showStatus('✅ 已复制');
             }
         });
 
+        // 清空按钮
         btnClear.addEventListener('click', () => {
             input.value = '';
             output.value = '';
@@ -99,9 +192,12 @@
             showStatus('');
         });
 
+        // 状态提示显示
         function showStatus(msg) {
             statusMsg.textContent = msg;
-            setTimeout(() => statusMsg.textContent = '', 2000);
+            setTimeout(() => {
+                statusMsg.textContent = '';
+            }, 2000);
         }
     </script>
 </body>
