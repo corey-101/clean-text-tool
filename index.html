@@ -143,7 +143,7 @@
 
             cleaned = cleaned.replace(/(\w)-\n[ \t]*([a-z])/g, '$1$2');
 
-            cleaned = cleaned.replace(/([^\n])\n[ \t]*(?=[^-\d*•])/g, '$1 ');
+            cleaned = cleaned.replace(/([^\n])\n[ \t]*(?=[^-\d*•\n])/g, '$1 ');
 
             cleaned = cleaned.replace(/(^|\n)[ \t]+(?=[^-*•])/g, '$1');
 
