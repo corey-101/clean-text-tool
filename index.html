@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Code Cleaner</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --input-bg: #252526;
+            --border-color: #3e3e42;
+            --accent-color: #007acc;
+            --accent-hover: #005f9e;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            box-sizing: border-box; /* 确保padding不会撑大宽度 */
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: white;
+        }
+
+        #btn-copy {
+            background-color: var(--accent-color);
+        }
+        #btn-copy:hover {
+            background-color: var(--accent-hover);
+        }
+
+        #btn-clear {
+            background-color: #444;
+            flex: 0 0 80px;
+        }
+        #btn-clear:hover {
+            background-color: #555;
+        }
+
+        /* 移动端优化 */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+        
+        .status {
+            text-align: center;
+            font-size: 0.9rem;
+            height: 20px;
+            color: #4ec9b0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📋 Cloud Code 格式清洗工具</h1>
+    
+    <div class="container">
+        <textarea id="input" placeholder="请粘贴那段乱乱的 CLI 输出文本..."></textarea>
+        
+        <textarea id="output" placeholder="清洗后的结果会出现在这里..." readonly></textarea>
+    </div>
+
+    <div class="status" id="status-msg"></div>
+
+    <div class="controls">
+        <button id="btn-clear">清空</button>
+        <button id="btn-copy">复制结果 (Copy)</button>
+    </div>
+
+    <script>
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const btnCopy = document.getElementById('btn-copy');
+        const btnClear = document.getElementById('btn-clear');
+        const statusMsg = document.getElementById('status-msg');
+
+        // 核心清洗逻辑函数
+        function cleanText(text) {
+            if (!text) return '';
+
+            // 1. JS 正则技巧：先把所有看起来是换行+缩进的地方合并
+            // 逻辑：如果 \n 后面跟着空格，且再后面不是列表符号(-,*,•,数字)，则替换为空格
+            let cleaned = text.replace(/(?<=\S)\n\s+(?=[^-\d*•])/g, ' ');
+
+            // 2. 解决首行缩进问题：去除整个字符串开头和结尾的空白
+            cleaned = cleaned.trim();
+
+            // 3. 额外优化：如果合并后出现了多个空格，压缩为一个
+            // (防止原文末尾本身就有空格，导致合并后变2个)
+            cleaned = cleaned.replace(/ +/g, ' ');
+
+            // 4. 修复列表项可能的错位（可选，根据需要微调）
+            // 确保列表项前面有换行
+            cleaned = cleaned.replace(/(\S)\s+(- )/g, '$1\n$2');
+
+            return cleaned;
+        }
+
+        // 监听输入，实时转换
+        input.addEventListener('input', () => {
+            const raw = input.value;
+            output.value = cleanText(raw);
+        });
+
+        // 复制按钮逻辑
+        btnCopy.addEventListener('click', async () => {
+            if (!output.value) return;
+            try {
+                await navigator.clipboard.writeText(output.value);
+                showStatus('✅ 已复制到剪贴板！');
+            } catch (err) {
+                showStatus('❌ 复制失败，请手动复制');
+            }
+        });
+
+        // 清空按钮
+        btnClear.addEventListener('click', () => {
+            input.value = '';
+            output.value = '';
+            input.focus();
+            showStatus('');
+        });
+
+        function showStatus(msg) {
+            statusMsg.textContent = msg;
+            setTimeout(() => {
+                statusMsg.textContent = '';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
