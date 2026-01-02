@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,16 +91,25 @@
         #btn-copy {
             background-color: var(--accent-color);
         }
+
         #btn-copy:hover {
             background-color: var(--accent-hover);
         }
 
         #btn-clear {
             background-color: #3e3e42;
-            flex: 0 0 100px;
         }
+
         #btn-clear:hover {
             background-color: #555;
+        }
+
+        #btn-translate {
+            background-color: #2e7d32;
+        }
+
+        #btn-translate:hover {
+            background-color: #1b5e20;
         }
 
         .status-bar {
@@ -111,10 +121,11 @@
         }
     </style>
 </head>
+
 <body>
 
     <h1>📋 Text Format Cleaner</h1>
-    
+
     <div class="container">
         <textarea id="input" placeholder="Paste your text here..."></textarea>
         <textarea id="output" placeholder="Cleaned text will appear here..." readonly></textarea>
@@ -123,6 +134,7 @@
     <div class="controls">
         <button id="btn-clear">Clear</button>
         <button id="btn-copy">Copy Result</button>
+        <button id="btn-translate">🌐 Google 翻译</button>
     </div>
 
     <div class="status-bar" id="status-msg"></div>
@@ -175,6 +187,18 @@
             showStatus('');
         });
 
+        const btnTranslate = document.getElementById('btn-translate');
+        btnTranslate.addEventListener('click', () => {
+            const text = output.value.trim();
+            if (!text) {
+                showStatus('⚠️ No text to translate');
+                return;
+            }
+            // Google Translate URL: sl=en (source: English), tl=zh-CN (target: Chinese)
+            const url = `https://translate.google.com/?sl=en&tl=zh-CN&text=${encodeURIComponent(text)}&op=translate`;
+            window.open(url, '_blank');
+        });
+
         function showStatus(msg) {
             statusMsg.textContent = msg;
             setTimeout(() => {
@@ -183,4 +207,5 @@
         }
     </script>
 </body>
+
 </html>
